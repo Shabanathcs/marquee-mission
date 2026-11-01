@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marquee Mission | Junior Web Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5ff; --card:#ffffff; --ink:#1b1f3b; --muted:#5d6385;
+  --violet:#5b3df5; --violet-2:#7c63ff; --orange:#ff7a1a; --green:#12b981;
+  --yellow:#ffc93c; --pink:#ff4f8b; --sky:#2fb5ff; --red:#ef4444;
+  --line:#e2e5f5; --code:#141833; --code-ink:#e8eaff;
+  --shadow:0 6px 0 rgba(27,31,59,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',sans-serif;font-size:19px;line-height:1.55}
+h1,h2,h3{font-family:'Baloo 2',cursive;line-height:1.15;margin:0 0 .4em}
+code,pre,textarea.code{font-family:'JetBrains Mono',monospace}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+
+/* ===== Top HUD ===== */
+.hud{position:sticky;top:0;z-index:50;background:var(--ink);color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.hud .wrap{display:flex;align-items:center;gap:14px;padding-top:8px;padding-bottom:8px;flex-wrap:wrap}
+.brand{font-family:'Baloo 2';font-weight:800;font-size:1.15rem;white-space:nowrap}
+.brand span{color:var(--yellow)}
+.mission-tag{font-style:normal;background:var(--orange);color:#fff;font-size:.95rem;padding:2px 12px;border-radius:99px;margin-left:8px;vertical-align:middle}
+.xpbox{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}
+.xpbar{flex:1;height:14px;background:#2d3360;border-radius:99px;overflow:hidden}
+.xpfill{height:100%;width:0;background:linear-gradient(90deg,var(--yellow),var(--orange));transition:width .6s}
+.xptext{font-weight:800;font-size:.95rem;white-space:nowrap}
+.rank{background:var(--violet);padding:3px 12px;border-radius:99px;font-weight:800;font-size:.9rem;white-space:nowrap}
+.nav{display:flex;gap:6px;overflow-x:auto;padding:6px 0 10px;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:none;text-decoration:none;background:#2d3360;color:#fff;font-weight:700;font-size:.85rem;padding:5px 12px;border-radius:99px}
+.nav a:hover{background:#3d4480}
+.nav a.active{background:var(--orange);box-shadow:0 0 0 2px #fff inset}
+.tab-pane{display:none;min-height:calc(100vh - 160px)}
+.tab-pane.active{display:block;animation:pop .35s ease}
+@keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:28px}
+.hero .pager .btn.ghost{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
+
+/* ===== Hero ===== */
+.hero{background:linear-gradient(135deg,var(--violet),#3a1fd1 60%,#1b1f3b);color:#fff;padding:42px 0 50px;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(2.2rem,6vw,3.6rem);margin:0}
+.hero p{font-size:1.2rem;max-width:620px;opacity:.95}
+.tag-chip{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:800;padding:4px 14px;border-radius:99px;margin-bottom:12px;font-size:.95rem}
+.hero-ticker{margin-top:22px;background:#000;border:4px solid var(--yellow);border-radius:14px;color:#ffb000;font-family:'JetBrains Mono';font-weight:700;font-size:1.25rem;padding:8px 0}
+.start-btn{display:inline-block;margin-top:22px;background:var(--orange);color:#fff;font-weight:800;font-size:1.15rem;padding:12px 26px;border-radius:14px;text-decoration:none;box-shadow:0 5px 0 #c55500}
+.start-btn{border:0;cursor:pointer;font-family:'Nunito';margin-top:0}
+.login{margin-top:24px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);border-radius:18px;padding:16px;max-width:760px}
+.login-title{font-family:'Baloo 2';font-weight:800;font-size:1.3rem;margin-bottom:10px}
+.login-row{display:flex;gap:10px;flex-wrap:wrap}
+.login-row select{flex:0 1 170px;padding:12px 14px;border-radius:12px;border:3px solid transparent;font-size:1.15rem;font-family:'Nunito';font-weight:800;color:var(--ink);cursor:pointer}
+.login-row select.err{border-color:var(--red);animation:shake .3s}
+.login-row input{flex:1;min-width:150px;padding:12px 14px;border-radius:12px;border:3px solid transparent;font-size:1.15rem;font-family:'Nunito';font-weight:800;color:var(--ink)}
+.login-row input:focus{outline:none;border-color:var(--yellow)}
+.login-row input.err{border-color:var(--red);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.player{background:#2d3360;padding:3px 12px;border-radius:99px;font-weight:800;font-size:.9rem;white-space:nowrap}
+.player:empty{display:none}
+.start-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c55500}
+
+/* ===== Sections ===== */
+section{padding:44px 0}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.step{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-family:'Baloo 2';font-weight:800;font-size:1.5rem;color:#fff;background:var(--violet);box-shadow:var(--shadow);flex:none}
+.sec-head h2{font-size:clamp(1.7rem,4vw,2.3rem);margin:0}
+.sec-head .sub{color:var(--muted);font-weight:700;width:100%;margin-left:66px;margin-top:-10px}
+.phase{display:inline-block;font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:#e7e2ff;color:var(--violet);padding:3px 10px;border-radius:99px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.muted{color:var(--muted)}
+.xp-pill{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:800;font-size:.85rem;padding:2px 10px;border-radius:99px}
+.btn{border:0;cursor:pointer;font-family:'Nunito';font-weight:800;font-size:1rem;padding:10px 18px;border-radius:12px;color:#fff;background:var(--violet);box-shadow:0 4px 0 #3a22b8}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #3a22b8}
+.btn.orange{background:var(--orange);box-shadow:0 4px 0 #c55500}
+.btn.green{background:var(--green);box-shadow:0 4px 0 #0b8a5e}
+.btn.ghost{background:#eef0ff;color:var(--violet);box-shadow:0 4px 0 #cfd3f5}
+.btn.small{font-size:.9rem;padding:7px 12px}
+
+/* ===== Warm-up ===== */
+.metro{background:#111;border-radius:16px;padding:14px;border:4px solid #333}
+.metro .label{color:#aaa;font-size:.8rem;font-weight:700;margin-bottom:6px}
+.metro marquee{color:#ff3b3b;font-family:'JetBrains Mono';font-weight:700;font-size:1.3rem}
+.mcq{margin-bottom:16px}
+.mcq .q{font-weight:800;font-size:1.1rem;margin-bottom:10px}
+.mcq .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.opt{border:2px solid var(--line);background:#fafbff;border-radius:14px;padding:10px 12px;font-weight:700;font-size:1rem;cursor:pointer;text-align:left;font-family:'Nunito';color:var(--ink)}
+.opt:hover{border-color:var(--violet-2)}
+.opt.right{background:#d9fbe9;border-color:var(--green)}
+.opt.wrong{background:#ffe1e1;border-color:var(--red)}
+.opt:disabled{cursor:default}
+.explain{margin-top:8px;font-weight:700;font-size:.95rem;display:none}
+.explain.show{display:block}
+
+/* ===== LO / SC ===== */
+.losc{display:grid;grid-template-columns:1fr 1.3fr;gap:16px}
+@media(max-width:760px){.losc{grid-template-columns:1fr}}
+.lo{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;border:0}
+.lo h3{color:var(--yellow)}
+.lo p{font-size:1.25rem;font-weight:700;margin:0}
+.sc h3{color:var(--green)}
+.sc label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line);cursor:pointer;font-weight:600}
+.sc label:last-child{border-bottom:0}
+.sc input{width:22px;height:22px;accent-color:var(--green);flex:none;margin-top:3px}
+
+/* ===== Learn ===== */
+pre.codebox{background:var(--code);color:var(--code-ink);border-radius:16px;padding:18px;overflow-x:auto;font-size:1rem;margin:0;line-height:1.6}
+pre.codebox.syntax{font-size:clamp(1rem,2.2vw,1.45rem);line-height:1.75;padding:24px 28px;white-space:pre-wrap;word-break:break-word;overflow:visible}
+.t{color:#ff8fb8}.a{color:#ffd166}.v{color:#7ef0b5}.c{color:#8b93c9}
+.attr{position:relative}
+.attr h3{font-size:1.35rem;margin-bottom:4px}
+.attr code{background:#eef0ff;color:var(--violet);padding:2px 7px;border-radius:7px;font-size:.9rem;font-weight:700}
+.demo{margin-top:10px;background:#0f1330;color:#fff;border-radius:10px;padding:6px 8px;font-weight:700;font-size:.95rem}
+.lanes{display:grid;gap:12px}
+.lane{display:grid;grid-template-columns:120px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center}
+.lane-tag{grid-row:1/3;color:#fff;font-family:'JetBrains Mono';font-weight:700;text-align:center;padding:14px 6px;border-radius:12px;font-size:1.05rem}
+.lane-track{background:#0f1330;color:#fff;border-radius:12px;padding:10px;font-weight:800;font-size:1.25rem;border-left:4px solid #fff;border-right:4px solid #fff}
+.lane-note{font-weight:700;color:var(--muted);font-size:.95rem;margin-top:4px}
+@media(max-width:560px){.lane{grid-template-columns:1fr}.lane-tag{grid-row:auto;padding:6px}}
+.stage marquee[direction=up],.stage marquee[direction=down]{height:150px}
+.fact{background:#fff7e0;border:2px dashed var(--orange);border-radius:16px;padding:14px 18px;font-weight:700}
+
+/* ===== Playground ===== */
+.play{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
+@media(max-width:820px){.play{grid-template-columns:1fr}}
+.ctl{margin-bottom:12px}
+.ctl label{display:block;font-weight:800;margin-bottom:4px}
+.ctl input[type=text],.ctl select{width:100%;padding:9px 12px;border:2px solid var(--line);border-radius:12px;font-size:1rem;font-family:'Nunito';font-weight:700}
+.ctl input[type=range]{width:100%;accent-color:var(--orange)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:2px solid var(--line);background:#fafbff;padding:6px 12px;border-radius:10px;font-weight:800;font-family:'Nunito';cursor:pointer;font-size:.95rem;color:var(--ink)}
+.seg button.on{background:var(--violet);color:#fff;border-color:var(--violet)}
+.checks{display:flex;gap:16px;flex-wrap:wrap;font-weight:800}
+.checks input{width:20px;height:20px;accent-color:var(--violet);vertical-align:middle}
+.stage{background:repeating-linear-gradient(45deg,#f6f7ff,#f6f7ff 12px,#eef0ff 12px,#eef0ff 24px);border:2px solid var(--line);border-radius:16px;height:180px;display:flex;align-items:center;padding:10px;overflow:hidden}
+.stage marquee{font-size:1.5rem;width:100%}
+.dir-track{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.dir-track span{padding:3px 10px;border-radius:99px;background:#eceefa;font-weight:800;font-size:.85rem;color:var(--muted)}
+.dir-track span.got{background:var(--green);color:#fff}
+
+/* ===== Quests ===== */
+.quest{cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+.quest:hover{transform:translateY(-4px)}
+.quest .emoji{font-size:2.6rem;line-height:1}
+.quest h3{font-size:1.35rem;margin:6px 0 2px}
+.stars{color:var(--orange);font-size:1.1rem;letter-spacing:2px}
+.quest.done{border-color:var(--green);background:#effcf6}
+.quest.done::after{content:"✔ CLEARED";position:absolute;top:14px;right:-34px;background:var(--green);color:#fff;font-weight:800;font-size:.75rem;padding:4px 40px;transform:rotate(35deg)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+
+/* ===== Editor (quest modal + project) ===== */
+.editor{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.editor{grid-template-columns:1fr}}
+textarea.code{width:100%;min-height:260px;background:var(--code);color:var(--code-ink);border:0;border-radius:14px;padding:14px;font-size:.95rem;line-height:1.6;resize:vertical;tab-size:2}
+iframe.preview{width:100%;min-height:260px;border:3px solid var(--line);border-radius:14px;background:#fff}
+.pane-title{font-weight:800;font-size:.9rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.checklist{list-style:none;padding:0;margin:10px 0 0}
+.checklist li{padding:6px 10px;border-radius:10px;margin-bottom:6px;font-weight:700;background:#f5f6fc;display:flex;gap:8px;align-items:center}
+.checklist li.ok{background:#d9fbe9}
+.checklist li .ic{width:24px;text-align:center}
+
+.modal{position:fixed;inset:0;background:rgba(15,19,48,.7);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+.modal.open{display:flex}
+.modal .box{background:#fff;border-radius:22px;max-width:980px;width:100%;padding:22px;position:relative}
+.close{position:absolute;top:12px;right:14px;background:#eef0ff;border:0;width:40px;height:40px;border-radius:12px;font-size:1.3rem;cursor:pointer;font-weight:800}
+.mission-task{background:#fff7e0;border-left:6px solid var(--orange);padding:12px 16px;border-radius:12px;font-weight:700;font-size:1.1rem;margin:10px 0}
+.hint{display:none;background:#e9f7ff;border-left:6px solid var(--sky);padding:10px 14px;border-radius:12px;font-weight:700;margin-top:10px}
+.hint.show{display:block}
+
+/* ===== Project ===== */
+.themes{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.theme{border:2px solid var(--line);background:#fff;padding:10px 14px;border-radius:14px;font-weight:800;cursor:pointer;font-family:'Nunito';font-size:1rem;color:var(--ink)}
+.theme.on{border-color:var(--orange);background:#fff1e6}
+.progress{height:18px;background:#eceefa;border-radius:99px;overflow:hidden;margin-top:8px}
+.progress div{height:100%;width:0;background:linear-gradient(90deg,var(--green),#5be3a8);transition:width .4s}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row input[type=text]{padding:10px 12px;border:2px solid var(--line);border-radius:12px;font-size:1rem;font-family:'Nunito';font-weight:700;flex:1;min-width:180px}
+
+/* ===== HOT ===== */
+.hot{border-left:8px solid var(--pink)}
+.hot .num{font-family:'Baloo 2';font-weight:800;color:var(--pink);font-size:1.1rem}
+.hot details{margin-top:8px}
+.hot summary{cursor:pointer;font-weight:800;color:var(--violet)}
+
+/* ===== Connect ===== */
+.connect h3{font-size:1.3rem}
+.connect.uae{border-top:8px solid #00843d}
+.connect.cross{border-top:8px solid var(--sky)}
+.connect.moral{border-top:8px solid var(--orange)}
+
+/* ===== Trophy ===== */
+.badges{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.badge{text-align:center;background:#fff;border:2px dashed var(--line);border-radius:18px;padding:14px 8px;filter:grayscale(1);opacity:.45;transition:.4s}
+.badge.got{filter:none;opacity:1;border-style:solid;border-color:var(--yellow);background:#fffbea}
+.badge .b-ic{font-size:2.4rem}
+.badge .b-name{font-weight:800;font-size:.95rem}
+.badge .b-how{font-size:.8rem;color:var(--muted);font-weight:700}
+
+/* ===== Toast / confetti ===== */
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:16px;font-weight:800;z-index:200;transition:transform .35s;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.confetti{position:fixed;top:-12px;width:10px;height:14px;z-index:300;pointer-events:none;animation:fall 1.6s linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+
+.score-card{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px}
+.score-card div{background:#f3f5ff;border-radius:14px;padding:10px;font-weight:800}
+.score-card b{display:block;font-size:1.6rem;color:var(--violet);font-family:'Baloo 2'}
+footer{background:var(--ink);color:#c9cdf0;text-align:center;padding:24px 16px;font-weight:700;font-size:.95rem}
+footer button{margin-top:10px;background:transparent;color:#8b93c9;border:1px solid #444a7a;border-radius:10px;padding:5px 12px;cursor:pointer;font-family:'Nunito';font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ===== HUD ===== -->
+<div class="hud">
+  <div class="wrap">
+    <div class="brand">🧑‍💻 Junior Web <span>Studio</span> <em class="mission-tag">🎬 Marquee Mission</em></div>
+    <div class="xpbox">
+      <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+      <div class="xptext">⚡ <span id="xpNum">0</span> XP</div>
+    </div>
+    <div class="player" id="player"></div>
+    <div class="rank" id="rankName">🥚 Rookie</div>
+  </div>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="#home" data-tab="home">🏠 Home</a>
+      <a href="#warmup" data-tab="warmup">🔥 Warm-up</a>
+      <a href="#goals" data-tab="goals">🎯 Goals</a>
+      <a href="#learn" data-tab="learn">📘 Learn</a>
+      <a href="#play" data-tab="play">🎛️ Play</a>
+      <a href="#quests" data-tab="quests">🗺️ Quests</a>
+      <a href="#project" data-tab="project">🏗️ Mini Project</a>
+      <a href="#plenary" data-tab="plenary">🧠 Plenary</a>
+      <a href="#hot" data-tab="hot">🌶️ HOT</a>
+      <a href="#connect" data-tab="connect">🇦🇪 Connect</a>
+      <a href="#trophy" data-tab="trophy">🏆 Trophies</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<header class="hero tab-pane" id="home">
+  <div class="wrap">
+    <span class="tag-chip">🧑‍💻 Junior Web Studio • Grade 6 • HTML5</span>
+    <h1>🎬 Marquee Mission</h1>
+    <p>Make your web page <b>MOVE!</b> Learn the <code>&lt;marquee&gt;</code> tag, earn XP, unlock badges and build your own moving web page.</p>
+    <div class="hero-ticker">
+      <marquee scrollamount="8">🚨 BREAKING NEWS: Grade 6 coders take over Junior Web Studio! ⚡ Earn XP ⚡ Unlock badges ⚡ Become a STUDIO LEGEND! 🏆</marquee>
+    </div>
+    <div class="login">
+      <div class="login-title">🪪 Enter your Studio Pass</div>
+      <div class="login-row">
+        <input type="text" id="plName" placeholder="Your name" maxlength="30" autocomplete="off">
+        <select id="plClass"><option value="">Class ▾</option><option>6A</option><option>6B</option><option>6C</option><option>6D</option><option>6E</option><option>6F</option><option>6G</option><option>6H</option><option>6I</option><option>6J</option><option>6K</option><option>6L</option><option>6M</option><option>6N</option><option>6O</option><option>6P</option><option>6Q</option></select>
+        <button class="start-btn" id="startBtn">▶ START MISSION</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 1. WARM-UP ===== -->
+<section class="tab-pane" id="warmup">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--orange)">1</div>
+      <h2>Warm-up: Spot the Moving Text</h2>
+      <div class="sub"><span class="phase">Starter</span></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>🚇 Where have you seen this?</h3>
+        <div class="metro">
+          <div class="label">METRO DISPLAY • RED LINE</div>
+          <marquee scrollamount="6">Next station: Burj Khalifa / Dubai Mall ... Please mind the gap ... </marquee>
+        </div>
+        <p style="font-weight:700;margin-top:14px">💬 Talk to your partner: Where else do you see <b>moving text</b>?</p>
+        <p class="muted" style="font-weight:700">Think: airports ✈️, TV news 📺, malls 🛍️, scoreboards ⚽</p>
+      </div>
+      <div class="card">
+        <h3>🧠 Tag Recall <span class="xp-pill">+10 XP each</span></h3>
+        <p class="muted" style="margin-top:0;font-weight:700">Remember these tags from last class?</p>
+        <div id="warmQuiz"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2. LO / SC ===== -->
+<section class="tab-pane" id="goals" style="background:#eceaff">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step">2</div>
+      <h2>Today's Mission Goals</h2>
+    </div>
+    <div class="losc">
+      <div class="card lo">
+        <h3>🎯 Learning Objective</h3>
+        <p>I will be able to <b>create</b> and <b>customise</b> moving text on a web page using the &lt;marquee&gt; tag with &lt;b&gt;, &lt;u&gt;, &lt;hr&gt; and &lt;br&gt;.</p>
+      </div>
+      <div class="card sc">
+        <h3>✅ Success Criteria</h3>
+        <label><input type="checkbox"> <span>I can <b>identify</b> the opening and closing &lt;marquee&gt; tags.</span></label>
+        <label><input type="checkbox"> <span>I can <b>apply</b> <i>direction</i> and <i>behavior</i> to move text.</span></label>
+        <label><input type="checkbox"> <span>I can <b>change</b> speed and colour using <i>scrollamount</i> and <i>bgcolor</i>.</span></label>
+        <label><input type="checkbox"> <span>I can <b>combine</b> &lt;marquee&gt; with &lt;b&gt;, &lt;u&gt;, &lt;hr&gt; and &lt;br&gt;.</span></label>
+        <label><input type="checkbox"> <span>I can <b>create</b> a mini web page with moving text.</span></label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3. LEARN ===== -->
+<section class="tab-pane" id="learn">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--sky)">3</div>
+      <h2>Learn: The &lt;marquee&gt; Tag</h2>
+      <div class="sub"><span class="phase">Main Activity • Part A</span></div>
+    </div>
+
+    <div class="grid" style="margin-bottom:16px">
+      <div class="card">
+        <h3>📦 What is it?</h3>
+        <p style="margin-top:0">The <b>&lt;marquee&gt;</b> tag makes text or images <b>scroll across</b> the screen.</p>
+        <p>It is a <b>container tag</b> — it has an opening <code>&lt;marquee&gt;</code> and a closing <code>&lt;/marquee&gt;</code>.</p>
+        <div class="demo"><marquee>👋 I am moving because I am inside a marquee!</marquee></div>
+      </div>
+      <div class="card">
+        <h3>🧩 Syntax</h3>
+<pre class="codebox syntax"><span class="t">&lt;marquee</span> <span class="a">direction</span>=<span class="v">"right"</span>
+         <span class="a">behavior</span>=<span class="v">"alternate"</span>
+         <span class="a">scrollamount</span>=<span class="v">"10"</span>
+         <span class="a">bgcolor</span>=<span class="v">"yellow"</span><span class="t">&gt;</span>
+  <span class="t">&lt;b&gt;</span>Welcome<span class="t">&lt;/b&gt;</span> to <span class="t">&lt;u&gt;</span>Junior Web Studio<span class="t">&lt;/u&gt;</span>
+<span class="t">&lt;/marquee&gt;</span>
+<span class="t">&lt;hr&gt;</span>   <span class="c">&lt;!-- draws a line --&gt;</span>
+Line one<span class="t">&lt;br&gt;</span>Line two  <span class="c">&lt;!-- new line --&gt;</span></pre>
+      </div>
+    </div>
+
+    <h3 style="font-size:1.5rem">🎮 Power-Up Attributes</h3>
+    <div class="grid g3">
+      <div class="card attr">
+        <h3>🧭 direction</h3>
+        <p style="margin:0">Which way it moves.<br><code>left</code> <code>right</code> <code>up</code> <code>down</code></p>
+        <div class="demo"><marquee direction="right">➡️ direction="right"</marquee></div>
+      </div>
+      <div class="card attr">
+        <h3>🏀 behavior</h3>
+        <p style="margin:0">How it moves.<br><code>scroll</code> <code>slide</code> <code>alternate</code></p>
+        <div class="demo"><marquee behavior="alternate">🏀 alternate = bounce!</marquee></div>
+      </div>
+      <div class="card attr">
+        <h3>⚡ scrollamount</h3>
+        <p style="margin:0">Speed. Bigger number = <b>faster</b>.<br><code>scrollamount="20"</code></p>
+        <div class="demo"><marquee scrollamount="20">🏎️ ZOOM! scrollamount="20"</marquee></div>
+      </div>
+      <div class="card attr">
+        <h3>🎨 bgcolor</h3>
+        <p style="margin:0">Background colour.<br><code>bgcolor="yellow"</code></p>
+        <div class="demo" style="padding:0;overflow:hidden"><marquee bgcolor="#ffc93c" style="color:#1b1f3b;padding:6px">🎨 bgcolor="yellow"</marquee></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="font-size:1.5rem;margin:0">🏀 Behaviour Showdown</h3>
+        <button class="btn orange" id="replayBeh">↺ Replay</button>
+      </div>
+      <p class="muted" style="font-weight:700;margin:4px 0 12px">Watch all 3 behaviours race at the same time!</p>
+      <div class="lanes">
+        <div class="lane"><div class="lane-tag" style="background:var(--violet)">scroll</div><div class="lane-track"><marquee behavior="scroll" scrollamount="8">🚗 I go across and come back again</marquee></div><div class="lane-note">Moves across, disappears, starts again ♾️</div></div>
+        <div class="lane"><div class="lane-tag" style="background:var(--orange)">slide</div><div class="lane-track"><marquee behavior="slide" scrollamount="8">🛑 I slide in and STOP</marquee></div><div class="lane-note">Slides in and stops at the edge 🛑</div></div>
+        <div class="lane"><div class="lane-tag" style="background:var(--green)">alternate</div><div class="lane-track"><marquee behavior="alternate" scrollamount="8">🏀 I bounce!</marquee></div><div class="lane-note">Bounces between both sides ↔️</div></div>
+      </div>
+<pre class="codebox" style="margin-top:12px;font-size:1.05rem"><span class="t">&lt;marquee</span> <span class="a">behavior</span>=<span class="v">"scroll"</span><span class="t">&gt;</span>...<span class="t">&lt;/marquee&gt;</span>
+<span class="t">&lt;marquee</span> <span class="a">behavior</span>=<span class="v">"slide"</span><span class="t">&gt;</span>...<span class="t">&lt;/marquee&gt;</span>
+<span class="t">&lt;marquee</span> <span class="a">behavior</span>=<span class="v">"alternate"</span><span class="t">&gt;</span>...<span class="t">&lt;/marquee&gt;</span></pre>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== 4. PLAYGROUND ===== -->
+<section class="tab-pane" id="play" style="background:#eaf7ff">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--green)">4</div>
+      <h2>Marquee Playground</h2>
+      <div class="sub"><span class="phase">Main Activity • Part B</span> &nbsp;Try all 4 directions to earn <span class="xp-pill">+20 XP</span></div>
+    </div>
+    <div class="play">
+      <div class="card">
+        <div class="ctl"><label>✏️ Your text</label><input type="text" id="pText" value="Hello Grade 6! 🚀" maxlength="60"></div>
+        <div class="ctl"><label>🧭 direction</label>
+          <div class="seg" data-key="direction"><button class="on">left</button><button>right</button><button>up</button><button>down</button></div>
+        </div>
+        <div class="ctl"><label>🏀 behavior</label>
+          <div class="seg" data-key="behavior"><button class="on">scroll</button><button>slide</button><button>alternate</button></div>
+        </div>
+        <div class="ctl"><label>⚡ scrollamount: <span id="pSpeedV">6</span></label><input type="range" id="pSpeed" min="1" max="40" value="6"></div>
+        <div class="ctl"><label>🎨 bgcolor</label>
+          <div class="seg" data-key="bgcolor"><button class="on">none</button><button>yellow</button><button>lightgreen</button><button>pink</button><button>skyblue</button></div>
+        </div>
+        <div class="ctl checks">
+          <label><input type="checkbox" id="pB"> &lt;b&gt; Bold</label>
+          <label><input type="checkbox" id="pU"> &lt;u&gt; Underline</label>
+        </div>
+      </div>
+      <div>
+        <div class="pane-title">👀 Live Output</div>
+        <div class="stage" id="pStage"></div>
+        <div class="dir-track" id="dirTrack"><span data-d="left">⬅ left</span><span data-d="right">➡ right</span><span data-d="up">⬆ up</span><span data-d="down">⬇ down</span></div>
+        <div class="pane-title" style="margin-top:14px">🧾 Your Code</div>
+        <pre class="codebox" id="pCode"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5. QUESTS ===== -->
+<section class="tab-pane" id="quests">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--pink)">5</div>
+      <h2>Quest Board: Pick Your Challenge!</h2>
+      <div class="sub"><span class="phase">Main Activity • Part C</span> &nbsp;Choose quests <b>you</b> like. Clear at least <b>3</b>!</div>
+    </div>
+    <div class="filters">
+      <button class="btn small ghost" data-f="all">All</button>
+      <button class="btn small ghost" data-f="1">★ Easy</button>
+      <button class="btn small ghost" data-f="2">★★ Medium</button>
+      <button class="btn small ghost" data-f="3">★★★ Hard</button>
+    </div>
+    <div class="grid g3" id="questGrid"></div>
+  </div>
+</section>
+
+<!-- Quest modal -->
+<div class="modal" id="qModal">
+  <div class="box">
+    <button class="close" id="qClose" aria-label="Close">✕</button>
+    <div class="row"><span class="emoji" id="qEmoji" style="font-size:2.4rem"></span><h2 id="qTitle" style="margin:0"></h2></div>
+    <div><span class="stars" id="qStars"></span> &nbsp;<span class="xp-pill" id="qXp"></span></div>
+    <div class="mission-task" id="qTask"></div>
+    <div class="editor">
+      <div><div class="pane-title">⌨️ Edit the code</div><textarea class="code" id="qCode" spellcheck="false"></textarea></div>
+      <div><div class="pane-title">👀 Output</div><iframe class="preview" id="qPrev" title="Quest output"></iframe></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn green" id="qCheck">✅ Check My Code</button>
+      <button class="btn ghost" id="qHintBtn">💡 Hint</button>
+      <button class="btn ghost" id="qReset">↺ Reset</button>
+    </div>
+    <div class="hint" id="qHint"></div>
+    <ul class="checklist" id="qList"></ul>
+  </div>
+</div>
+
+<!-- ===== 6. MINI PROJECT ===== -->
+<section class="tab-pane" id="project" style="background:#fff1e6">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--orange)">6</div>
+      <h2>🏗️ Mini Project: My Moving Web Page</h2>
+      <div class="sub"><span class="phase">Main Activity • Mini Project</span> &nbsp;Each tick = <span class="xp-pill">+10 XP</span></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>1️⃣ Pick your theme</h3>
+      <div class="themes" id="themes"></div>
+      <h3>2️⃣ Build it — your page must have:</h3>
+      <div class="progress"><div id="projBar"></div></div>
+      <ul class="checklist" id="projList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px"></ul>
+    </div>
+
+    <div class="editor">
+      <div><div class="pane-title">⌨️ Your Code</div><textarea class="code" id="projCode" spellcheck="false" style="min-height:380px"></textarea></div>
+      <div><div class="pane-title">👀 Your Web Page</div><iframe class="preview" id="projPrev" title="Project output" style="min-height:380px"></iframe></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>3️⃣ 🚶 Gallery Walk</h3>
+      <p style="font-weight:700;margin:0">Visit <b>2 friends'</b> screens. Give each one ⭐ <b>star</b> (what you liked) and one 💡 <b>wish</b> (what they can add).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 7. PLENARY ===== -->
+<section class="tab-pane" id="plenary">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step">7</div>
+      <h2>Plenary: Boss Quiz</h2>
+      <div class="sub"><span class="phase">Plenary</span> &nbsp;Score 2/3 or more to unlock 🧠 Quiz Master</div>
+    </div>
+    <div class="card"><div id="bossQuiz"></div>
+      <div id="bossScore" style="font-weight:800;font-size:1.2rem"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 8. HOT ===== -->
+<section class="tab-pane" id="hot" style="background:#ffeef4">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--pink)">8</div>
+      <h2>🌶️ HOT Questions</h2>
+      <div class="sub"><span class="phase">Higher Order Thinking</span> &nbsp;Think, then discuss!</div>
+    </div>
+    <div class="grid g2">
+      <div class="card hot"><div class="num">HOT 1 • Evaluate</div><p style="margin:4px 0">A news website sets <code>scrollamount="60"</code>. Is this a good idea? Why?</p>
+        <details><summary>Think about…</summary><p class="muted">Can readers actually read text that fast?</p></details></div>
+      <div class="card hot"><div class="num">HOT 2 • Analyse</div><p style="margin:4px 0">Why could <b>10 marquees</b> on one page be a problem for users?</p>
+        <details><summary>Think about…</summary><p class="muted">Eyes, attention, and people who find moving things hard to read.</p></details></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONNECT ===== -->
+<section class="tab-pane" id="connect">
+  <div class="wrap">
+    <div class="grid g3">
+      <div class="card connect uae"><h3>🇦🇪 UAE Connect</h3><p style="margin:0">UAE airports, Dubai Metro and RTA bus stops use <b>scrolling displays</b> to share updates. UAE National Day is on <b>2 December</b> — make a marquee to celebrate it!</p></div>
+      <div class="card connect cross"><h3>🔗 Cross-curricular</h3><p style="margin:0"><b>Maths:</b> <i>scrollamount</i> is speed — bigger number, faster movement.<br><b>English:</b> write short, catchy <i>headlines</i> for your marquee.</p></div>
+      <div class="card connect moral"><h3>💛 Moral Value</h3><p style="margin:0"><b>Be considerate.</b> Good designers think about <i>everyone</i> reading their page. Use moving text wisely and share only <b>true</b> news.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TROPHY ROOM ===== -->
+<section class="tab-pane" id="trophy" style="background:#1b1f3b;color:#fff">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="step" style="background:var(--yellow);color:var(--ink)">🏆</div>
+      <h2>Trophy Room</h2>
+    </div>
+    <div class="badges" id="badgeShelf"></div>
+    <div class="card" style="margin-top:18px;text-align:center;color:var(--ink)">
+      <h3 style="margin:0 0 6px" id="trophyName"></h3>
+      <h3 style="margin:0">Your Rank: <span id="rankBig">🥚 Rookie</span></h3>
+      <p class="muted" style="font-weight:700;margin:6px 0 0" id="nextRank"></p>
+      <div id="scoreCard" class="score-card"></div>
+      <button class="btn green" id="sendScore" style="margin-top:12px">📤 Send my score to teacher</button>
+      <div id="syncMsg" class="muted" style="font-weight:700;margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Junior Web Studio • Grade 6 Computer Science • Sharjah Indian School, Juwaiza<br>
+  <button id="resetAll">↺ Reset my progress</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= STATE ================= */
+const KEY='jws-marquee-mission-v1';
+let S={xp:0,done:{},dirs:[]};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof scheduleSync==='function')scheduleSync();}
+
+/* ===== GOOGLE SHEET LINK: paste your Apps Script Web App URL between the quotes ===== */
+const SHEET_URL='https://script.google.com/macros/s/AKfycbzW5Wv63NFm9VOWbxS1f8HXtoC1HepYkKF0GXxo5RL009JD4qxZ51e3AfWtzFo-m1wo1A/exec';
+
+const RANKS=[
+  {xp:0,name:'🥚 Rookie'},{xp:60,name:'🐣 Junior Coder'},{xp:150,name:'💻 Pro Coder'},
+  {xp:250,name:'🧙 Web Wizard'},{xp:340,name:'👑 Studio Legend'}
+];
+const MAXXP=370;
+
+const BADGES=[
+  {id:'warm',ic:'🔥',name:'Warm-up Hero',how:'Answer all Tag Recall right'},
+  {id:'explorer',ic:'🧭',name:'Explorer',how:'Try all 4 directions'},
+  {id:'quest3',ic:'🗺️',name:'Quest Champion',how:'Clear 3 quests'},
+  {id:'questAll',ic:'💎',name:'All-Rounder',how:'Clear all 6 quests'},
+  {id:'builder',ic:'🏗️',name:'Web Builder',how:'Finish the Mini Project'},
+  {id:'quiz',ic:'🧠',name:'Quiz Master',how:'Score 2+ in Boss Quiz'},
+  {id:'legend',ic:'👑',name:'Studio Legend',how:'Reach 340 XP'}
+];
+
+function rankFor(xp){let r=RANKS[0];RANKS.forEach(x=>{if(xp>=x.xp)r=x});return r;}
+
+function award(key,xp,msg){
+  if(S.done[key])return false;
+  S.done[key]=true;S.xp+=xp;save();
+  toast(`⚡ +${xp} XP — ${msg}`);
+  const before=rankFor(S.xp-xp).name, after=rankFor(S.xp).name;
+  if(before!==after){setTimeout(()=>{toast(`🎉 RANK UP! You are now ${after}`);confetti();},1400);}
+  checkBadges();updateHUD();return true;
+}
+function badge(id){
+  if(S.done['badge_'+id])return;
+  S.done['badge_'+id]=true;save();
+  const b=BADGES.find(x=>x.id===id);
+  setTimeout(()=>{toast(`🏅 Badge unlocked: ${b.ic} ${b.name}`);confetti();},700);
+  renderBadges();
+}
+function checkBadges(){
+  if(['w0','w1','w2'].every(k=>S.done[k]))badge('warm');
+  if(S.dirs.length>=4)badge('explorer');
+  const q=QUESTS.filter(x=>S.done['q_'+x.id]).length;
+  if(q>=3)badge('quest3'); if(q>=QUESTS.length)badge('questAll');
+  if(PROJ_REQ.filter(r=>!r.bonus).every(r=>S.done['p_'+r.id]))badge('builder');
+  if(S.done.quizMaster)badge('quiz');
+  if(S.xp>=340)badge('legend');
+}
+function updateHUD(){
+  document.getElementById('xpNum').textContent=S.xp;
+  document.getElementById('xpFill').style.width=Math.min(100,S.xp/MAXXP*100)+'%';
+  const r=rankFor(S.xp);
+  document.getElementById('rankName').textContent=r.name;
+  document.getElementById('rankBig').textContent=r.name;
+  const nx=RANKS.find(x=>x.xp>S.xp);
+  document.getElementById('nextRank').textContent=nx?`${nx.xp-S.xp} XP more to become ${nx.name}`:'You reached the top rank! 🎉';
+}
+function renderBadges(){
+  document.getElementById('badgeShelf').innerHTML=BADGES.map(b=>
+    `<div class="badge ${S.done['badge_'+b.id]?'got':''}"><div class="b-ic">${b.ic}</div><div class="b-name" style="color:var(--ink)">${b.name}</div><div class="b-how">${b.how}</div></div>`).join('');
+}
+let tT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2600);}
+function confetti(){const cols=['#ffc93c','#ff7a1a','#5b3df5','#12b981','#ff4f8b','#2fb5ff'];
+  for(let i=0;i<60;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';
+    c.style.background=cols[i%cols.length];c.style.animationDelay=Math.random()*.5+'s';c.style.animationDuration=(1.2+Math.random())+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),2800);}}
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ================= MCQ ENGINE ================= */
+function renderMCQ(el,list,prefix,onAnswer){
+  el.innerHTML=list.map((m,i)=>`
+    <div class="mcq" data-i="${i}">
+      <div class="q">${i+1}. ${m.q}</div>
+      <div class="opts">${m.o.map((o,j)=>`<button class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+      <div class="explain"></div>
+    </div>`).join('');
+  el.querySelectorAll('.mcq').forEach(box=>{
+    const i=+box.dataset.i,m=list[i],key=prefix+i;
+    const btns=box.querySelectorAll('.opt'),ex=box.querySelector('.explain');
+    const lock=(picked)=>{btns.forEach((b,j)=>{b.disabled=true;if(j===m.a)b.classList.add('right');else if(j===picked)b.classList.add('wrong');});
+      ex.innerHTML=(picked===m.a?'✅ Correct! ':'❌ Oops! ')+m.e;ex.classList.add('show');};
+    if(S.done[key+'_ans']!==undefined)lock(S.done[key+'_ans']);
+    btns.forEach(b=>b.addEventListener('click',()=>{
+      const j=+b.dataset.j;S.done[key+'_ans']=j;save();lock(j);
+      if(j===m.a)award(key,10,'Correct answer!');else{toast('❌ Not quite — read the tip!');}
+      onAnswer&&onAnswer();
+    }));
+  });
+}
+
+/* Warm-up */
+const WARM=[
+  {q:'What does <code>&lt;b&gt;</code> do?',o:['Makes text big','Makes text bold','Makes text blue'],a:1,e:'&lt;b&gt; makes text <b>bold</b>.'},
+  {q:'What does <code>&lt;u&gt;</code> do?',o:['Underlines text','Moves text up','Deletes text'],a:0,e:'&lt;u&gt; <u>underlines</u> text.'},
+  {q:'Which tag draws a <b>line</b> and which starts a <b>new line</b>?',o:['&lt;hr&gt; = line, &lt;br&gt; = new line','&lt;br&gt; = line, &lt;hr&gt; = new line','Both draw a line'],a:0,e:'&lt;hr&gt; draws a horizontal line. &lt;br&gt; breaks to a new line.'}
+];
+renderMCQ(document.getElementById('warmQuiz'),WARM,'w');
+
+/* Boss quiz */
+const BOSS=[
+  {q:'Which attribute changes the <b>speed</b> of a marquee?',o:['speed','scrollamount','fast','bgcolor'],a:1,e:'scrollamount controls speed.'},
+  {q:'<code>behavior="alternate"</code> makes the text…',o:['Stop','Disappear','Bounce back and forth','Turn red'],a:2,e:'alternate = bounce between the sides.'},
+  {q:'🐞 Spot the bug: <code>&lt;marquee direction="top"&gt;</code>',o:['top should be up','marquee is spelled wrong','Needs bgcolor','No bug'],a:0,e:'Direction values are left, right, up, down.'}
+];
+function bossScore(){
+  const answered=BOSS.filter((m,i)=>S.done['b'+i+'_ans']!==undefined).length;
+  const right=BOSS.filter((m,i)=>S.done['b'+i+'_ans']===m.a).length;
+  const el=document.getElementById('bossScore');
+  if(answered===BOSS.length){el.textContent=`🏁 Your score: ${right} / ${BOSS.length}`+(right>=2?' — Boss defeated! 💥':' — Good try! Check the tips.');
+    if(right>=2&&!S.done.quizMaster){S.done.quizMaster=true;save();checkBadges();}}
+  else el.textContent=`Answered ${answered} / ${BOSS.length}`;
+}
+renderMCQ(document.getElementById('bossQuiz'),BOSS,'b',bossScore);bossScore();
+
+/* ================= PLAYGROUND ================= */
+const P={direction:'left',behavior:'scroll',bgcolor:'none'};
+document.querySelectorAll('.seg').forEach(seg=>{
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    P[seg.dataset.key]=b.textContent;renderPlay();
+  }));
+});
+['pText','pSpeed','pB','pU'].forEach(id=>document.getElementById(id).addEventListener('input',renderPlay));
+function renderPlay(){
+  const sp=document.getElementById('pSpeed').value;document.getElementById('pSpeedV').textContent=sp;
+  let txt=esc(document.getElementById('pText').value||'Hello!');
+  const B=document.getElementById('pB').checked,U=document.getElementById('pU').checked;
+  let inner=txt,innerCode=`<span style="color:#fff">${txt}</span>`;
+  if(U){inner=`<u>${inner}</u>`;innerCode=`<span class="t">&lt;u&gt;</span>${innerCode}<span class="t">&lt;/u&gt;</span>`;}
+  if(B){inner=`<b>${inner}</b>`;innerCode=`<span class="t">&lt;b&gt;</span>${innerCode}<span class="t">&lt;/b&gt;</span>`;}
+  const attrs=[];
+  if(P.direction!=='left')attrs.push(['direction',P.direction]);
+  if(P.behavior!=='scroll')attrs.push(['behavior',P.behavior]);
+  if(sp!=='6')attrs.push(['scrollamount',sp]);
+  if(P.bgcolor!=='none')attrs.push(['bgcolor',P.bgcolor]);
+    const html=`<marquee ${attrs.map(a=>`${a[0]}="${a[1]}"`).join(' ')}>${inner}</marquee>`;
+  document.getElementById('pStage').innerHTML=html;
+  document.getElementById('pCode').innerHTML=`<span class="t">&lt;marquee</span>${attrs.map(a=>` <span class="a">${a[0]}</span>=<span class="v">"${a[1]}"</span>`).join('')}<span class="t">&gt;</span>\n  ${innerCode}\n<span class="t">&lt;/marquee&gt;</span>`;
+  if(!S.dirs.includes(P.direction)){S.dirs.push(P.direction);save();}
+  document.querySelectorAll('#dirTrack span').forEach(s=>s.classList.toggle('got',S.dirs.includes(s.dataset.d)));
+  if(S.dirs.length>=4)award('explore',20,'You tried all 4 directions!');
+}
+renderPlay();
+
+/* ================= QUESTS ================= */
+const doc=c=>new DOMParser().parseFromString(c,'text/html');
+const mq=d=>[...d.querySelectorAll('marquee')];
+const at=(el,a)=>(el&&el.getAttribute(a)||'').trim().toLowerCase();
+const MV=['Text moves (inside &lt;marquee&gt;)',d=>mq(d).length>0];
+const QUESTS=[
+  {id:'foot',ic:'⚽',title:'Football Flash',lvl:1,xp:20,blurb:'The GOAL news is stuck! Make it fly to the right.',
+   task:'This text is <b>not moving</b>. Make it <b>move</b> from <b>left to right</b>.',
+   start:'<h2>⚽ Match Day</h2>\nGOAL! What a strike in the last minute!',
+   hint:'Wrap the text: <code>&lt;marquee direction="right"&gt;</code> GOAL!... <code>&lt;/marquee&gt;</code>',
+   checks:[MV,['direction is "right"',d=>mq(d).some(m=>at(m,'direction')==='right')]]},
+  {id:'car',ic:'🏎️',title:'Speed Racer',lvl:2,xp:30,blurb:'The race car is parked! Make it zoom.',
+   task:'Make the text <b>move fast</b> (scrollamount 15 or more) and make it <b>bold</b>.',
+   start:'<h2>🏎️ Race Results</h2>\nCar 7 wins the race!',
+   hint:'<code>&lt;marquee scrollamount="20"&gt;&lt;b&gt;</code>Car 7 wins the race!<code>&lt;/b&gt;&lt;/marquee&gt;</code>',
+   checks:[MV,['scrollamount is 15 or more',d=>mq(d).some(m=>+at(m,'scrollamount')>=15)],['Moving text is bold &lt;b&gt;',d=>mq(d).some(m=>m.querySelector('b'))]]},
+  {id:'game',ic:'🎮',title:'Game Zone Bounce',lvl:2,xp:30,blurb:'Make the gaming banner move and bounce with colour.',
+   task:'Make the text <b>move</b>, <b>bounce</b> side to side and give it a <b>background colour</b>.',
+   start:'<h2>🎮 Game Zone</h2>\nNew level unlocked!',
+   hint:'<code>&lt;marquee behavior="alternate" bgcolor="lightgreen"&gt;</code> ... <code>&lt;/marquee&gt;</code>',
+   checks:[MV,['behavior is "alternate"',d=>mq(d).some(m=>at(m,'behavior')==='alternate')],['bgcolor is added',d=>mq(d).some(m=>at(m,'bgcolor')!=='')]]},
+  {id:'space',ic:'🚀',title:'Rocket Launch',lvl:2,xp:30,blurb:'Make the rocket message move up into space!',
+   task:'Make the text <b>move up</b> and show it on <b>two lines</b>.',
+   start:'<h2>🚀 Space Mission</h2>\n3... 2... 1... Lift off! Destination: Mars',
+   hint:'<code>&lt;marquee direction="up"&gt;</code>3... 2... 1... Lift off!<code>&lt;br&gt;</code>Destination: Mars<code>&lt;/marquee&gt;</code>',
+   checks:[MV,['direction is "up"',d=>mq(d).some(m=>at(m,'direction')==='up')],['&lt;br&gt; used inside the moving text',d=>mq(d).some(m=>m.querySelector('br'))]]},
+  {id:'uae',ic:'🇦🇪',title:'UAE Pride',lvl:3,xp:40,blurb:'Make two National Day messages move in opposite ways.',
+   task:'Make <b>both lines move</b> (2 marquees) with an <b>&lt;hr&gt;</b> between them. First goes <b>left</b>, second goes <b>right</b>. <u>Underline</u> "UAE National Day".',
+   start:'<h2>🇦🇪 Celebrate the UAE</h2>\nHappy UAE National Day!\n\nWe love the UAE!',
+   hint:'Put each line in its own <code>&lt;marquee&gt;</code>, add <code>&lt;hr&gt;</code> in between and <code>direction="right"</code> on the 2nd. Wrap "UAE National Day" in <code>&lt;u&gt;</code>.',
+   checks:[['2 or more marquees',d=>mq(d).length>=2],['&lt;hr&gt; is used',d=>!!d.querySelector('hr')],['A marquee moves right',d=>mq(d).some(m=>at(m,'direction')==='right')],['"UAE National Day" is underlined',d=>[...d.querySelectorAll('u')].some(u=>/uae national day/i.test(u.textContent))]]},
+  {id:'food',ic:'🍕',title:'Food Court Menu',lvl:3,xp:40,blurb:'Make the menu move in, then stop and stay.',
+   task:'Make the menu <b>move</b>: it should <b>slide in and stop</b>. Show items on separate lines with <b>&lt;br&gt;</b>, make the price <b>bold</b> and the dish name <u>underlined</u>.',
+   start:'<h2>🍕 Today\'s Special</h2>\nPizza AED 15\nBurger AED 12',
+   hint:'<code>&lt;marquee behavior="slide"&gt;&lt;u&gt;Pizza&lt;/u&gt; &lt;b&gt;AED 15&lt;/b&gt;&lt;br&gt;</code> ... <code>&lt;/marquee&gt;</code>',
+   checks:[MV,['behavior is "slide"',d=>mq(d).some(m=>at(m,'behavior')==='slide')],['&lt;br&gt; used',d=>!!d.querySelector('marquee br')],['&lt;b&gt; used',d=>!!d.querySelector('marquee b')],['&lt;u&gt; used',d=>!!d.querySelector('marquee u')]]}
+];
+let curQ=null,filt='all';
+function renderQuests(){
+  document.getElementById('questGrid').innerHTML=QUESTS.filter(q=>filt==='all'||q.lvl==filt).map(q=>`
+    <div class="card quest ${S.done['q_'+q.id]?'done':''}" data-id="${q.id}" tabindex="0">
+      <div class="emoji">${q.ic}</div><h3>${q.title}</h3>
+      <div><span class="stars">${'★'.repeat(q.lvl)}${'☆'.repeat(3-q.lvl)}</span> &nbsp;<span class="xp-pill">+${q.xp} XP</span></div>
+      <p class="muted" style="font-weight:700;margin:8px 0 0">${q.blurb}</p>
+    </div>`).join('');
+  document.querySelectorAll('.quest').forEach(c=>{const open=()=>openQuest(c.dataset.id);c.addEventListener('click',open);c.addEventListener('keydown',e=>{if(e.key==='Enter')open();});});
+}
+document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{filt=b.dataset.f;renderQuests();}));
+const qCode=document.getElementById('qCode'),qPrev=document.getElementById('qPrev');
+function wrapDoc(c){return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:20px;padding:10px;margin:0}marquee[direction=up],marquee[direction=down]{height:150px}</style></head><body>${c}</body></html>`;}
+function openQuest(id){
+  curQ=QUESTS.find(q=>q.id===id);
+  document.getElementById('qEmoji').textContent=curQ.ic;
+  document.getElementById('qTitle').textContent=curQ.title;
+  document.getElementById('qStars').textContent='★'.repeat(curQ.lvl)+'☆'.repeat(3-curQ.lvl);
+  document.getElementById('qXp').textContent='+'+curQ.xp+' XP';
+  document.getElementById('qTask').innerHTML='🎯 '+curQ.task;
+  document.getElementById('qHint').innerHTML='💡 '+curQ.hint;document.getElementById('qHint').classList.remove('show');
+  let saved=null;try{saved=localStorage.getItem(KEY+'_q2_'+id);}catch(e){}
+  qCode.value=saved||curQ.start;runQuest();showChecks(false);
+  document.getElementById('qModal').classList.add('open');document.body.style.overflow='hidden';
+}
+function runQuest(){qPrev.srcdoc=wrapDoc(qCode.value);try{localStorage.setItem(KEY+'_q2_'+curQ.id,qCode.value);}catch(e){}}
+function showChecks(run){
+  const d=doc(qCode.value);const res=curQ.checks.map(c=>({l:c[0],ok:run&&c[1](d)}));
+  document.getElementById('qList').innerHTML=res.map(r=>`<li class="${r.ok?'ok':''}"><span class="ic">${run?(r.ok?'✅':'❌'):'⬜'}</span>${r.l}</li>`).join('');
+  return res.every(r=>r.ok);
+}
+let qT;qCode.addEventListener('input',()=>{clearTimeout(qT);qT=setTimeout(runQuest,400);});
+document.getElementById('qCheck').addEventListener('click',()=>{
+  runQuest();
+  if(showChecks(true)){if(!award('q_'+curQ.id,curQ.xp,`${curQ.title} cleared!`))toast('✅ Already cleared — great job!');confetti();renderQuests();}
+  else toast('🔧 Almost! Fix the ❌ items.');
+});
+document.getElementById('qHintBtn').addEventListener('click',()=>document.getElementById('qHint').classList.toggle('show'));
+document.getElementById('qReset').addEventListener('click',()=>{qCode.value=curQ.start;runQuest();showChecks(false);});
+function closeQ(){document.getElementById('qModal').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('qClose').addEventListener('click',closeQ);
+document.getElementById('qModal').addEventListener('click',e=>{if(e.target.id==='qModal')closeQ();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQ();});
+renderQuests();
+
+/* Tab key in editors */
+document.querySelectorAll('textarea.code').forEach(t=>t.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const s=t.selectionStart;t.value=t.value.slice(0,s)+'  '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+2;t.dispatchEvent(new Event('input'));}
+}));
+
+/* ================= MINI PROJECT ================= */
+const THEMES=[
+  {id:'uae',ic:'🇦🇪',name:'UAE National Day',code:'<h1>🇦🇪 UAE National Day</h1>\nHappy National Day, UAE!\n\n<p>Write 2 lines about the UAE here.</p>\n'},
+  {id:'sports',ic:'⚽',name:'Sports Day News',code:'<h1>⚽ School Sports Day</h1>\nSports Day is coming soon!\n\n<p>Write the events and winners here.</p>\n'},
+  {id:'gaming',ic:'🎮',name:'Gaming News',code:'<h1>🎮 Gaming News</h1>\nNew game update is out!\n\n<p>Write about your favourite game here.</p>\n'},
+  {id:'space',ic:'🚀',name:'Space Mission',code:'<h1>🚀 Space Mission Update</h1>\nThe rocket is ready for launch!\n\n<p>Write about the mission here.</p>\n'},
+  {id:'school',ic:'🏫',name:'School Notice Board',code:'<h1>🏫 Class 6 Notice Board</h1>\nWelcome to our class page!\n\n<p>Write class news here.</p>\n'}
+];
+const PROJ_REQ=[
+  {id:'h',l:'A heading (&lt;h1&gt; or &lt;h2&gt;)',t:d=>!!d.querySelector('h1,h2,h3')},
+  {id:'m',l:'A &lt;marquee&gt;',t:d=>mq(d).length>0},
+  {id:'dir',l:'direction attribute',t:d=>mq(d).some(m=>at(m,'direction'))},
+  {id:'beh',l:'behavior attribute',t:d=>mq(d).some(m=>at(m,'behavior'))},
+  {id:'sa',l:'scrollamount attribute',t:d=>mq(d).some(m=>at(m,'scrollamount'))},
+  {id:'bg',l:'bgcolor attribute',t:d=>mq(d).some(m=>at(m,'bgcolor'))},
+  {id:'b',l:'Bold text &lt;b&gt;',t:d=>!!d.querySelector('b')},
+  {id:'u',l:'Underlined text &lt;u&gt;',t:d=>!!d.querySelector('u')},
+  {id:'hr',l:'A line &lt;hr&gt;',t:d=>!!d.querySelector('hr')},
+  {id:'br',l:'A line break &lt;br&gt;',t:d=>!!d.querySelector('br')},
+  {id:'two',l:'⭐ BONUS: 2 marquees',t:d=>mq(d).length>=2,bonus:true}
+];
+const projCode=document.getElementById('projCode'),projPrev=document.getElementById('projPrev');
+let theme=null;try{theme=localStorage.getItem(KEY+'_theme');}catch(e){}
+theme=theme||'uae';
+function renderThemes(){
+  document.getElementById('themes').innerHTML=THEMES.map(t=>`<button class="theme ${t.id===theme?'on':''}" data-id="${t.id}">${t.ic} ${t.name}</button>`).join('');
+  document.querySelectorAll('.theme').forEach(b=>b.addEventListener('click',()=>{
+    if(b.dataset.id===theme)return;
+    if(projCode.value.trim()&&!confirm('Switch theme? Your current code will be replaced.'))return;
+    theme=b.dataset.id;try{localStorage.setItem(KEY+'_theme',theme);}catch(e){}
+    projCode.value=THEMES.find(t=>t.id===theme).code;renderThemes();runProj();
+  }));
+}
+function runProj(){
+  projPrev.srcdoc=wrapDoc(projCode.value);
+  try{localStorage.setItem(KEY+'_proj2',projCode.value);}catch(e){}
+  const d=doc(projCode.value);let n=0;const main=PROJ_REQ.filter(r=>!r.bonus).length;
+  document.getElementById('projList').innerHTML=PROJ_REQ.map(r=>{const ok=r.t(d);if(ok&&!r.bonus)n++;
+    if(ok)award('p_'+r.id,10,r.l.replace(/&lt;/g,'<').replace(/&gt;/g,'>')+' ✔');
+    return `<li class="${ok?'ok':''}"><span class="ic">${ok?'✅':'⬜'}</span>${r.l}</li>`;}).join('');
+  document.getElementById('projBar').style.width=(n/main*100)+'%';
+  if(n===main&&!S.done.projDoneFx){S.done.projDoneFx=true;save();confetti();toast('🏗️ Mini Project complete! Amazing work!');}
+}
+let saved=null;try{saved=localStorage.getItem(KEY+'_proj2');}catch(e){}
+projCode.value=saved||THEMES.find(t=>t.id===theme).code;
+renderThemes();
+let pT;projCode.addEventListener('input',()=>{clearTimeout(pT);pT=setTimeout(runProj,500);});
+
+document.getElementById('replayBeh').addEventListener('click',()=>{
+  document.querySelectorAll('.lane-track marquee').forEach(m=>{const c=m.cloneNode(true);m.replaceWith(c);});
+});
+
+/* ================= PLAYER ================= */
+let PL={name:'',cls:''};try{PL=JSON.parse(localStorage.getItem(KEY+'_player'))||PL;}catch(e){}
+const plName=document.getElementById('plName'),plClass=document.getElementById('plClass');
+plName.value=PL.name;plClass.value=PL.cls;
+function showPlayer(){
+  document.getElementById('player').textContent=PL.name?`👤 ${PL.name} • ${PL.cls}`:'';
+  document.getElementById('trophyName').textContent=PL.name?`🎖️ ${PL.name} — Class ${PL.cls}`:'';
+}
+showPlayer();
+document.getElementById('startBtn').addEventListener('click',()=>{
+  const n=plName.value.trim(),c=plClass.value;
+  [plName,plClass].forEach(i=>i.classList.remove('err'));
+  if(!n||!c){void plName.offsetWidth;if(!n)plName.classList.add('err');if(!c)plClass.classList.add('err');toast('✏️ Enter your name and class first!');return;}
+  PL={name:n,cls:c};try{localStorage.setItem(KEY+'_player',JSON.stringify(PL));}catch(e){}
+  showPlayer();toast(`👋 Welcome, ${n}! Let's go!`);syncScores(false);showTab('warmup');
+});
+[plName,plClass].forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('startBtn').click();}));
+
+/* ================= SCORES → GOOGLE SHEET ================= */
+function getScores(){
+  const starter=WARM.filter((m,i)=>S.done['w'+i+'_ans']===m.a).length;
+  const plenary=BOSS.filter((m,i)=>S.done['b'+i+'_ans']===m.a).length;
+  const qDone=QUESTS.filter(q=>S.done['q_'+q.id]);
+  const main=PROJ_REQ.filter(r=>!r.bonus);
+  return {name:PL.name,cls:PL.cls,
+    starter,starterMax:WARM.length,
+    quests:qDone.length,questsMax:QUESTS.length,questXp:qDone.reduce((a,q)=>a+q.xp,0),
+    project:main.filter(r=>S.done['p_'+r.id]).length,projectMax:main.length,
+    bonus:S.done.p_two?'Yes':'No',
+    plenary,plenaryMax:BOSS.length,
+    xp:S.xp,rank:rankFor(S.xp).name.replace(/^\S+\s/,'')};
+}
+function renderScoreCard(){
+  const c=getScores();
+  document.getElementById('scoreCard').innerHTML=
+    `<div>🔥 Starter<b>${c.starter}/${c.starterMax}</b></div><div>🗺️ Quests<b>${c.quests}/${c.questsMax}</b></div>`+
+    `<div>🏗️ Mini Project<b>${c.project}/${c.projectMax}</b></div><div>🧠 Plenary<b>${c.plenary}/${c.plenaryMax}</b></div>`;
+}
+var syncT=null;
+function scheduleSync(){try{renderScoreCard();}catch(e){}clearTimeout(syncT);syncT=setTimeout(()=>{try{syncScores(false);}catch(e){}},2500);}
+function syncScores(manual){
+  const msg=document.getElementById('syncMsg');
+  if(!PL.name){if(manual){msg.textContent='✏️ Enter your name and class on the Home tab first.';showTab('home');}return;}
+  if(!/^https:\/\/script\.google\.com\//.test(SHEET_URL)){if(manual)msg.textContent='⚠️ Teacher: the Google Sheet link is not set up yet.';return;}
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(getScores())})
+    .then(()=>{msg.textContent='✅ Score sent at '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});if(manual)toast('📤 Score sent to your teacher!');})
+    .catch(()=>{msg.textContent='❌ Could not send. Check the internet and try again.';});
+}
+document.getElementById('sendScore').addEventListener('click',()=>syncScores(true));
+
+/* ================= TABS ================= */
+const PANES=[...document.querySelectorAll('.tab-pane')];
+function showTab(id){
+  if(!PANES.some(p=>p.id===id))id='home';
+  PANES.forEach(p=>p.classList.toggle('active',p.id===id));
+  // Restart moving text: marquees created while their tab was hidden measure 0 width and stay frozen
+  requestAnimationFrame(()=>{
+    const pane=document.getElementById(id);
+    pane.querySelectorAll('marquee').forEach(m=>{const c=m.cloneNode(true);m.replaceWith(c);try{c.start();}catch(e){}});
+    if(id==='play')renderPlay();
+    if(id==='project')runProj();
+  });
+  document.querySelectorAll('.nav a').forEach(a=>{const on=a.dataset.tab===id;a.classList.toggle('active',on);if(on)a.scrollIntoView({block:'nearest',inline:'center'});});
+  window.scrollTo(0,0);
+  try{history.replaceState(null,'','#'+id);}catch(e){}
+}
+document.querySelectorAll('[data-tab]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showTab(a.dataset.tab);}));
+PANES.forEach((p,i)=>{
+  const host=p.querySelector('.wrap');const pg=document.createElement('div');pg.className='pager';
+  const prev=PANES[i-1],next=PANES[i+1];
+  const lbl=id=>{const a=document.querySelector('.nav a[data-tab="'+id+'"]');return a?a.textContent:id;};
+  pg.innerHTML=(prev?`<button class="btn ghost" data-go="${prev.id}">◀ ${lbl(prev.id)}</button>`:'<span></span>')+
+               (next&&i>0?`<button class="btn orange" data-go="${next.id}">${lbl(next.id)} ▶</button>`:'<span></span>');
+  host.appendChild(pg);
+});
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.go)));
+showTab(location.hash.slice(1)||'home');
+
+/* ================= INIT ================= */
+runProj();renderBadges();checkBadges();updateHUD();renderScoreCard();
+document.getElementById('resetAll').addEventListener('click',()=>{
+  if(!confirm('Reset all XP, badges and code?'))return;
+  try{Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  location.reload();
+});
+</script>
+</body>
+</html>
