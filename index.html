@@ -563,11 +563,29 @@ Line one<span class="t">&lt;br&gt;</span>Line two  <span class="c">&lt;!-- new l
 <div class="toast" id="toast"></div>
 
 <script>
-/* ================= STATE ================= */
-const KEY='jws-marquee-mission-v1';
-let S={xp:0,done:{},dirs:[]};
-try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof scheduleSync==='function')scheduleSync();}
+(()=>{'use strict';
+/* ================= STATE (saved per student: Name + Class) ================= */
+const OLDKEY='jws-marquee-mission-v1';
+const NK='jwsmm2';
+const KEEP_MS=3*60*60*1000;            // a student's work is kept 3 hours (same period, after a refresh)
+let SID='';                            // current student id, set when they press START
+const fresh=()=>({xp:0,done:{},dirs:[]});
+let S=fresh();
+const sk=k=>NK+'|'+SID+'|'+k;
+const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+(function cleanStorage(){
+  try{
+    const keys=Object.keys(localStorage);
+    keys.filter(k=>k===OLDKEY||k.startsWith(OLDKEY+'_')).forEach(k=>localStorage.removeItem(k));   // old shared progress
+    const now=Date.now();
+    keys.filter(k=>k.startsWith(NK+'|')&&k.endsWith('|state')).forEach(k=>{
+      let ts=0;try{ts=JSON.parse(localStorage.getItem(k)).ts||0;}catch(e){}
+      if(now-ts>KEEP_MS){const pre=k.slice(0,-5);Object.keys(localStorage).filter(x=>x.startsWith(pre)).forEach(x=>localStorage.removeItem(x));}
+    });
+  }catch(e){}
+})();
+function save(){if(!SID)return;S.ts=Date.now();lsSet(sk('state'),JSON.stringify(S));scheduleSync();}
 
 /* ===== GOOGLE SHEET LINK: paste your Apps Script Web App URL between the quotes ===== */
 const SHEET_URL='https://script.google.com/macros/s/AKfycbzW5Wv63NFm9VOWbxS1f8HXtoC1HepYkKF0GXxo5RL009JD4qxZ51e3AfWtzFo-m1wo1A/exec';
@@ -591,7 +609,7 @@ const BADGES=[
 function rankFor(xp){let r=RANKS[0];RANKS.forEach(x=>{if(xp>=x.xp)r=x});return r;}
 
 function award(key,xp,msg){
-  if(S.done[key])return false;
+  if(!SID||S.done[key])return false;
   S.done[key]=true;S.xp+=xp;save();
   toast(`⚡ +${xp} XP — ${msg}`);
   const before=rankFor(S.xp-xp).name, after=rankFor(S.xp).name;
@@ -599,7 +617,7 @@ function award(key,xp,msg){
   checkBadges();updateHUD();return true;
 }
 function badge(id){
-  if(S.done['badge_'+id])return;
+  if(!SID||S.done['badge_'+id])return;
   S.done['badge_'+id]=true;save();
   const b=BADGES.find(x=>x.id===id);
   setTimeout(()=>{toast(`🏅 Badge unlocked: ${b.ic} ${b.name}`);confetti();},700);
@@ -768,11 +786,11 @@ function openQuest(id){
   document.getElementById('qXp').textContent='+'+curQ.xp+' XP';
   document.getElementById('qTask').innerHTML='🎯 '+curQ.task;
   document.getElementById('qHint').innerHTML='💡 '+curQ.hint;document.getElementById('qHint').classList.remove('show');
-  let saved=null;try{saved=localStorage.getItem(KEY+'_q2_'+id);}catch(e){}
+  const saved=SID?lsGet(sk('q_'+id)):null;
   qCode.value=saved||curQ.start;runQuest();showChecks(false);
   document.getElementById('qModal').classList.add('open');document.body.style.overflow='hidden';
 }
-function runQuest(){qPrev.srcdoc=wrapDoc(qCode.value);try{localStorage.setItem(KEY+'_q2_'+curQ.id,qCode.value);}catch(e){}}
+function runQuest(){qPrev.srcdoc=wrapDoc(qCode.value);if(SID)lsSet(sk('q_'+curQ.id),qCode.value);}
 function showChecks(run){
   const d=doc(qCode.value);const res=curQ.checks.map(c=>({l:c[0],ok:run&&c[1](d)}));
   document.getElementById('qList').innerHTML=res.map(r=>`<li class="${r.ok?'ok':''}"><span class="ic">${run?(r.ok?'✅':'❌'):'⬜'}</span>${r.l}</li>`).join('');
@@ -831,20 +849,19 @@ const PROJ_REQ=[
   {id:'two',l:'⭐ BONUS: 2 marquees',t:d=>mq(d).length>=2,bonus:true}
 ];
 const projCode=document.getElementById('projCode'),projPrev=document.getElementById('projPrev');
-let theme=null;try{theme=localStorage.getItem(KEY+'_theme');}catch(e){}
-theme=theme||'uae';
+let theme='uae';
 function renderThemes(){
   document.getElementById('themes').innerHTML=THEMES.map(t=>`<button class="theme ${t.id===theme?'on':''}" data-id="${t.id}">${t.ic} ${t.name}</button>`).join('');
   document.querySelectorAll('.theme').forEach(b=>b.addEventListener('click',()=>{
     if(b.dataset.id===theme)return;
     if(projCode.value.trim()&&!confirm('Switch theme? Your current code will be replaced.'))return;
-    theme=b.dataset.id;try{localStorage.setItem(KEY+'_theme',theme);}catch(e){}
+    theme=b.dataset.id;if(SID)lsSet(sk('theme'),theme);
     projCode.value=THEMES.find(t=>t.id===theme).code;renderThemes();runProj();
   }));
 }
 function runProj(){
   projPrev.srcdoc=wrapDoc(projCode.value);
-  try{localStorage.setItem(KEY+'_proj2',projCode.value);}catch(e){}
+  if(SID)lsSet(sk('proj'),projCode.value);
   const d=doc(projCode.value);let n=0;const main=PROJ_REQ.filter(r=>!r.bonus).length;
   document.getElementById('projList').innerHTML=PROJ_REQ.map(r=>{const ok=r.t(d);if(ok&&!r.bonus)n++;
     if(ok)award('p_'+r.id,10,r.l.replace(/&lt;/g,'<').replace(/&gt;/g,'>')+' ✔');
@@ -852,8 +869,7 @@ function runProj(){
   document.getElementById('projBar').style.width=(n/main*100)+'%';
   if(n===main&&!S.done.projDoneFx){S.done.projDoneFx=true;save();confetti();toast('🏗️ Mini Project complete! Amazing work!');}
 }
-let saved=null;try{saved=localStorage.getItem(KEY+'_proj2');}catch(e){}
-projCode.value=saved||THEMES.find(t=>t.id===theme).code;
+projCode.value=THEMES.find(t=>t.id===theme).code;
 renderThemes();
 let pT;projCode.addEventListener('input',()=>{clearTimeout(pT);pT=setTimeout(runProj,500);});
 
@@ -862,9 +878,9 @@ document.getElementById('replayBeh').addEventListener('click',()=>{
 });
 
 /* ================= PLAYER ================= */
-let PL={name:'',cls:''};try{PL=JSON.parse(localStorage.getItem(KEY+'_player'))||PL;}catch(e){}
+let PL={name:'',cls:''};
 const plName=document.getElementById('plName'),plClass=document.getElementById('plClass');
-plName.value=PL.name;plClass.value=PL.cls;
+plName.value='';plClass.value='';
 function showPlayer(){
   document.getElementById('player').textContent=PL.name?`👤 ${PL.name} • ${PL.cls}`:'';
   document.getElementById('trophyName').textContent=PL.name?`🎖️ ${PL.name} — Class ${PL.cls}`:'';
@@ -874,10 +890,26 @@ document.getElementById('startBtn').addEventListener('click',()=>{
   const n=plName.value.trim(),c=plClass.value;
   [plName,plClass].forEach(i=>i.classList.remove('err'));
   if(!n||!c){void plName.offsetWidth;if(!n)plName.classList.add('err');if(!c)plClass.classList.add('err');toast('✏️ Enter your name and class first!');return;}
-  PL={name:n,cls:c};try{localStorage.setItem(KEY+'_player',JSON.stringify(PL));}catch(e){}
-  showPlayer();toast(`👋 Welcome, ${n}! Let's go!`);syncScores(false);showTab('warmup');
+  PL={name:n,cls:c};
+  SID=(n.toLowerCase().replace(/\s+/g,' ')+'@'+c);
+  let st=null;try{st=JSON.parse(lsGet(sk('state')));}catch(e){}
+  const back=!!(st&&st.done);
+  S=back?Object.assign(fresh(),st):fresh();
+  theme=lsGet(sk('theme'))||'uae';
+  projCode.value=lsGet(sk('proj'))||THEMES.find(t=>t.id===theme).code;
+  refreshAll();save();
+  document.getElementById('startBtn').textContent='▶ CONTINUE';
+  toast(back?`👋 Welcome back, ${n}! Your work is saved.`:`👋 Welcome, ${n}! Let's go!`);
+  syncScores(false);showTab('warmup');
 });
 [plName,plClass].forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('startBtn').click();}));
+
+function refreshAll(){
+  renderMCQ(document.getElementById('warmQuiz'),WARM,'w');
+  renderMCQ(document.getElementById('bossQuiz'),BOSS,'b',bossScore);bossScore();
+  renderQuests();renderThemes();runProj();renderPlay();
+  renderBadges();checkBadges();updateHUD();renderScoreCard();showPlayer();
+}
 
 /* ================= SCORES → GOOGLE SHEET ================= */
 function getScores(){
@@ -891,7 +923,13 @@ function getScores(){
     project:main.filter(r=>S.done['p_'+r.id]).length,projectMax:main.length,
     bonus:S.done.p_two?'Yes':'No',
     plenary,plenaryMax:BOSS.length,
-    xp:S.xp,rank:rankFor(S.xp).name.replace(/^\S+\s/,'')};
+    xp:S.xp,rank:rankFor(S.xp).name.replace(/^\S+\s/,''),
+    /* raw work: the Google Sheet script re-marks from these, so edited numbers are ignored */
+    wAns:WARM.map((m,i)=>S.done['w'+i+'_ans']===undefined?-1:S.done['w'+i+'_ans']),
+    bAns:BOSS.map((m,i)=>S.done['b'+i+'_ans']===undefined?-1:S.done['b'+i+'_ans']),
+    questIds:qDone.map(q=>q.id),
+    projIds:PROJ_REQ.filter(r=>S.done['p_'+r.id]).map(r=>r.id),
+    explore:!!S.done.explore};
 }
 function renderScoreCard(){
   const c=getScores();
@@ -903,7 +941,7 @@ var syncT=null;
 function scheduleSync(){try{renderScoreCard();}catch(e){}clearTimeout(syncT);syncT=setTimeout(()=>{try{syncScores(false);}catch(e){}},2500);}
 function syncScores(manual){
   const msg=document.getElementById('syncMsg');
-  if(!PL.name){if(manual){msg.textContent='✏️ Enter your name and class on the Home tab first.';showTab('home');}return;}
+  if(!SID){if(manual){msg.textContent='✏️ Enter your name and class on the Home tab first.';showTab('home');}return;}
   if(!/^https:\/\/script\.google\.com\//.test(SHEET_URL)){if(manual)msg.textContent='⚠️ Teacher: the Google Sheet link is not set up yet.';return;}
   fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(getScores())})
     .then(()=>{msg.textContent='✅ Score sent at '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});if(manual)toast('📤 Score sent to your teacher!');})
@@ -915,6 +953,7 @@ document.getElementById('sendScore').addEventListener('click',()=>syncScores(tru
 const PANES=[...document.querySelectorAll('.tab-pane')];
 function showTab(id){
   if(!PANES.some(p=>p.id===id))id='home';
+  if(!SID&&id!=='home'){toast('🪪 Enter your name and class, then press START!');id='home';setTimeout(()=>plName.focus(),50);}
   PANES.forEach(p=>p.classList.toggle('active',p.id===id));
   // Restart moving text: marquees created while their tab was hidden measure 0 width and stay frozen
   requestAnimationFrame(()=>{
@@ -937,15 +976,25 @@ PANES.forEach((p,i)=>{
   host.appendChild(pg);
 });
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.go)));
-showTab(location.hash.slice(1)||'home');
+showTab('home');
 
 /* ================= INIT ================= */
 runProj();renderBadges();checkBadges();updateHUD();renderScoreCard();
 document.getElementById('resetAll').addEventListener('click',()=>{
   if(!confirm('Reset all XP, badges and code?'))return;
-  try{Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>localStorage.removeItem(k));}catch(e){}
-  location.reload();
+  try{Object.keys(localStorage).filter(k=>k.startsWith(NK)||k.startsWith(OLDKEY)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  location.replace(location.pathname);
 });
+
+/* ================= LOCK: no right-click / Inspect / View source ================= */
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{
+  const k=(e.key||'').toLowerCase(),c=e.ctrlKey||e.metaKey;
+  if(e.key==='F12'||(c&&e.shiftKey&&['i','j','c','k'].includes(k))||(e.metaKey&&e.altKey&&['i','j','c'].includes(k))||(c&&['u','s'].includes(k))){
+    e.preventDefault();e.stopPropagation();toast('🔒 This is locked during the mission.');
+  }
+},true);
+})();
 </script>
 </body>
 </html>
