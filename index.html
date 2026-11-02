@@ -792,6 +792,18 @@ document.getElementById('qModal').addEventListener('click',e=>{if(e.target.id===
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQ();});
 renderQuests();
 
+/* No copy-paste in code editors (Quests + Mini Project): students must type their own code */
+document.querySelectorAll('textarea.code').forEach(t=>{
+  const block=e=>{e.preventDefault();toast('✋ Copy-paste is off. Type the code yourself!');};
+  ['paste','copy','cut','drop','dragstart','contextmenu'].forEach(ev=>t.addEventListener(ev,block));
+  t.addEventListener('beforeinput',e=>{if(/^insertFrom(Paste|Drop)/.test(e.inputType))block(e);});
+  t.addEventListener('keydown',e=>{
+    const k=(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey)&&['c','v','x'].includes(k))block(e);
+    if(e.shiftKey&&k==='insert')block(e);
+  });
+});
+
 /* Tab key in editors */
 document.querySelectorAll('textarea.code').forEach(t=>t.addEventListener('keydown',e=>{
   if(e.key==='Tab'){e.preventDefault();const s=t.selectionStart;t.value=t.value.slice(0,s)+'  '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+2;t.dispatchEvent(new Event('input'));}
